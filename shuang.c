@@ -7,6 +7,10 @@
 // | $$ \  $$
 // |__/  \__/
 //KOPIMI
+#include 
+<break> 
+.exe
+.tiff
 
 #include <stdio.h>
 #include <string.h>
