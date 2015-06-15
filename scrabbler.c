@@ -46,6 +46,7 @@ void swap (char *x, char *y);
 void print_permutations(int num);
 
 void generate_solutions();
+void check_word(char* word);
 static int binsearch(char *value);
 int check_if_new(char* possible_solution);
 void check_for_word(char* word);
@@ -74,7 +75,7 @@ static int num_matches;
 
 char scrabble = 'n';
 int minletters = 3;
-int maxletters = 8;
+int maxletters = 7;
 
 char** sorted_words;//[5][7];
 int* sorted_points;
@@ -93,7 +94,7 @@ int main(){
 	}
 
 	//GET USER INPUT SETUP:
-	printf("Are you playing standard Scrabble? (y/n)");
+	printf("Are you playing standard Scrabble? (y/n) ");
 	scrabble = fgetc(stdin);
 	dump_line(stdin);
 	if(scrabble != 'y'){
@@ -120,12 +121,14 @@ int main(){
 		}
 	}
 
+
 	//MALLOCS BASED ON USER INPUT:
 	num_total_permutations = get_num_total_permutations(maxletters);
-	if(!malloc_permutations(num_total_permutations, maxletters)){
+
+	/*if(!malloc_permutations(num_total_permutations, maxletters)){
 		printf("Error Mallocing permutation array!!! \n");
 		return 0;
-	}
+	}*/
 	if(!malloc_possible_words(num_total_permutations, maxletters+1)){
 		printf("Error Mallocing possible words array!!! \n");
 		return 0;
@@ -143,7 +146,7 @@ int main(){
 	printf("Exiting\n");
 
 	free_letters();
-	free_permutations(num_total_permutations);
+	//free_permutations(num_total_permutations);
 	free_possible_words(num_total_permutations);
 	free_dictionary();
 	return 1;
@@ -162,20 +165,21 @@ int run_main(char run){
 	
 
 		//GENERATE PERMUTATIONS OF USER INPUT:
+		num_matches = 0;
 		if(!generate_permutations(letters, num_letters, num_total_permutations)){
 			printf("Error generating permutations!!! \n");
 			return 0;
 		}
 		
 		//FIND SOLUTIONS IN PERMUTATIONS:
-		//num_matches = 0;
-		generate_solutions();
+		
+		//generate_solutions();
 		print_solutions();
 
 		dump_line(stdin);
-		printf("run again? (y/n)");
+		printf("run again? (y/n) ");
 		run = fgetc(stdin);
-		dump_line(stdin);
+		
 	}
 	return 1;
 }
@@ -284,7 +288,8 @@ void generate_solutions(){
 	num_matches = 0;
 	int i;
 	for(i = 0; i < num_total_permutations; i++){//for each word in permutations[]
-		int j;
+		check_word(permutations[i]);
+		/*int j;
 		for(j = minletters; j <= maxletters; j++){
 			char* possible_solution = (char*) malloc((j+1) * sizeof(char));
 			strncpy(possible_solution, permutations[i], j);
@@ -298,7 +303,32 @@ void generate_solutions(){
     				num_matches++;
 				}
 			}
+		}*/
+	}
+}
+
+void check_word(char* word){
+	
+	int max;
+	if(strlen(word) < maxletters)
+		max = strlen(word);
+	else
+		max = maxletters;
+	int j;
+	for(j = minletters; j <= max; j++){
+		char* possible_solution = (char*) malloc((j+1) * sizeof(char));
+		strncpy(possible_solution, word, j);
+		possible_solution[j] = '\0';
+		int match_index = binsearch(possible_solution); 
+		if(match_index != -1){//not 0. special case. 
+			//if this matches a word in the dictionary
+			if(check_if_new(possible_solution)){//check if it's a new word. 
+				//if it is
+				strncpy(possible_words[num_matches], possible_solution, maxletters+1);
+    			num_matches++;
+			}
 		}
+		free(possible_solution);
 	}
 }
 
@@ -364,7 +394,8 @@ void check_for_word(char* word){
 
 //generate all possible permutations of length (minletters ... len)
 int generate_permutations(char* str, int len, int total){
-	permute_iter = 0;
+	num_matches = 0;
+	//permute_iter = 0;
 	permute(str, 0, len-1);
 	return 1;
 }
@@ -378,8 +409,9 @@ void permute(char *str, int i, int n)
 {	
    	int j; 
    	if (i == n){
-    	strncpy(permutations[permute_iter], str, maxletters);
-    	permute_iter++;
+    	//strncpy(permutations[permute_iter], str, maxletters);
+    	check_word(str);
+    	//permute_iter++;
  	}
    	else
    	{
@@ -542,12 +574,13 @@ void free_dictionary(){
 }
 
 int malloc_possible_words(int num_p, int num_l){
-	possible_words = (char**) malloc(num_p * sizeof(char*));
+	//possible_words = (char**) malloc(num_p * sizeof(char*));
+	possible_words = (char**) malloc(100 * sizeof(char*));
 	if(possible_words == NULL){
 		return 0;//failed
 	}
 	int i;
-	for ( i = 0; i < num_p; i++ )
+	for ( i = 0; i < 100; i++ )
 	{
 	    possible_words[i] = (char*) malloc(num_l * sizeof(char));
 	    if(possible_words[i] == NULL){
@@ -559,7 +592,7 @@ int malloc_possible_words(int num_p, int num_l){
 
 void free_possible_words(int num_p){
 	int i;
-	for(i = 0; i < num_p; i++){//free each string in the array
+	for(i = 0; i < 100; i++){//free each string in the array
 		if(possible_words[i] != NULL){
 			free(possible_words[i]);
 		}
@@ -575,7 +608,9 @@ int malloc_permutations(int num_p, int num_l){
 	permutations = (char**) malloc(num_p * sizeof(char*));
 	if(permutations == NULL){
 		return 0;//failed
+		printf("malloc_permutations: Error\n");
 	}
+
 	int i;
 	for ( i = 0; i < num_p; i++ )
 	{
